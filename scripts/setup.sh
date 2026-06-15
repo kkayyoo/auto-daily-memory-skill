@@ -82,7 +82,7 @@ case "$CHANNEL_TYPE" in
     ;;
   discord)
     DISCORD_CHANNEL_ID="$(prompt 'Discord channel_id')"
-    DISCORD_BOT_TOKEN="$(prompt 'Discord bot token')"
+    DISCORD_BOT_TOKEN="$(prompt 'Discord bot token (optional; env DISCORD_BOT_TOKEN is preferred)' '')"
     DISCORD_MESSAGE_LIMIT="$(prompt 'Discord message limit' '50')"
     replace_var DISCORD_CHANNEL_ID "$DISCORD_CHANNEL_ID"
     replace_var DISCORD_BOT_TOKEN "$DISCORD_BOT_TOKEN"

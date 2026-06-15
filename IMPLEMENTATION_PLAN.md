@@ -16,9 +16,9 @@ Build `auto-cron-memory-skill`, an OpenClaw skill that lets any agent schedule a
 
 ## Round 2: Discord support + multi-project tags
 
-- [ ] Create `scripts/daily_summary_discord.sh` using `GET /channels/{channel_id}/messages`.
-- [ ] Ensure daily memory headings and bullets include `[PROJECT: ...]` and `[ID: ...]`.
-- [ ] Document Discord API usage in `references/discord-api.md`.
+- [x] Create `scripts/daily_summary_discord.sh` using `GET /channels/{channel_id}/messages`.
+- [x] Ensure daily memory headings and bullets include `[PROJECT: ...]` and `[ID: ...]`.
+- [x] Document Discord API usage in `references/discord-api.md`.
 
 ## Round 3: Weekly summary + hallucination hardening
 

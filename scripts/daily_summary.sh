@@ -9,7 +9,7 @@ REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 CONFIG_FILE="${CONFIG_FILE:-$REPO_ROOT/config/config.sh}"
 
 log() {
-  printf '[%s] %s\n' "$(date -u '+%Y-%m-%dT%H:%M:%SZ')" "$*"
+  printf '[%s] %s\n' "$(date -u '+%Y-%m-%dT%H:%M:%SZ')" "$*" | tee -a "${LOG_FILE:-/dev/stderr}"
 }
 
 fail() {
@@ -41,6 +41,7 @@ PROJECT_TAG="${PROJECT_TAG:-default}"
 CHAT_NAME="${CHAT_NAME:-Feishu chat}"
 MEMORY_DIR="$(resolve_path "${MEMORY_DIR:-memory}")"
 LOG_DIR="$(resolve_path "${LOG_DIR:-logs}")"
+LOG_FILE="${LOG_FILE:-$LOG_DIR/daily_summary.log}"
 TIMEZONE="${TIMEZONE:-Asia/Shanghai}"
 FEISHU_API_BASE="${FEISHU_API_BASE:-https://open.feishu.cn/open-apis}"
 FEISHU_MESSAGE_LIMIT="${FEISHU_MESSAGE_LIMIT:-50}"
@@ -53,7 +54,8 @@ MEMORY_FILE="$MEMORY_DIR/$DATE_STR.md"
 RAW_FILE="$(mktemp)"
 SUMMARY_FILE="$(mktemp)"
 RESPONSE_FILE="$(mktemp)"
-trap 'rm -f "$RAW_FILE" "$SUMMARY_FILE" "$RESPONSE_FILE"' EXIT
+PROMPT_FILE="$(mktemp)"
+trap 'rm -f "$RAW_FILE" "$SUMMARY_FILE" "$RESPONSE_FILE" "$PROMPT_FILE"' EXIT
 
 log "Step 1/6: validating Feishu configuration"
 [[ -n "${FEISHU_CHAT_ID:-}" ]] || fail "FEISHU_CHAT_ID is required"
@@ -114,25 +116,76 @@ log "Fetched message lines: $MESSAGE_COUNT"
 log "Raw messages SHA256: $(sha256sum "$RAW_FILE" | awk '{print $1}')"
 
 log "Step 4/6: summarizing or falling back"
+cat > "$PROMPT_FILE" <<EOF_PROMPT
+请只基于下面的飞书群聊原始消息生成当天记忆，不要编造不存在的信息。
+
+输出格式必须是 Markdown：
+# $DATE_STR 群组日志
+
+## [PROJECT: $PROJECT_TAG] $CHAT_NAME
+- [MSG-001 HH:MM] 重要讨论...
+
+## 今日要点
+- ...
+
+## 进展与决策
+- ...
+
+## 待办 / 未解决
+- ...
+
+## 其他备注
+- ...
+
+要求：
+- 保留重要消息的 MSG-ID 或原始 ID 引用。
+- 没有证据的内容不要写。
+- 如果消息很少，可以简短总结。
+
+原始消息：
+$(cat "$RAW_FILE")
+EOF_PROMPT
+
 SUMMARY_STATUS="OK"
+AGENT_ID="${AGENT_ID:-${PROJECT_TAG}}"
 if [[ ! -s "$RAW_FILE" ]]; then
   SUMMARY_STATUS="NO_MESSAGES"
-  printf '[NO_MESSAGES] No Feishu messages were returned for this run.\n' > "$SUMMARY_FILE"
-elif [[ -n "${LLM_COMMAND:-}" ]]; then
-  if bash -lc "$LLM_COMMAND" < "$RAW_FILE" > "$SUMMARY_FILE"; then
-    if [[ ! -s "$SUMMARY_FILE" ]]; then
-      SUMMARY_STATUS="LLM_EMPTY"
-      printf '[LLM_FAILED: fallback used] LLM returned an empty summary. Raw messages follow.\n\n' > "$SUMMARY_FILE"
-      cat "$RAW_FILE" >> "$SUMMARY_FILE"
-    fi
-  else
-    SUMMARY_STATUS="LLM_FAILED"
-    printf '[LLM_FAILED: fallback used] LLM command failed. Raw messages follow.\n\n' > "$SUMMARY_FILE"
+  printf '# %s 群组日志
+
+## [PROJECT: %s] %s
+- [NO_MESSAGES] No Feishu messages were returned for this run.
+
+## 今日要点
+- 无可汇总消息。
+
+## 进展与决策
+- 无。
+
+## 待办 / 未解决
+- 无。
+
+## 其他备注
+- 消息数为 0。
+' "$DATE_STR" "$PROJECT_TAG" "$CHAT_NAME" > "$SUMMARY_FILE"
+elif openclaw agent --agent "$AGENT_ID" --message "$(cat "$PROMPT_FILE")" --timeout 60 > "$SUMMARY_FILE" 2>> "$LOG_FILE"; then
+  if [[ ! -s "$SUMMARY_FILE" ]]; then
+    SUMMARY_STATUS="LLM_EMPTY"
+    printf '# %s 群组日志
+
+## [PROJECT: %s] %s
+[LLM_FAILED: fallback used] LLM returned an empty summary. Raw messages follow.
+
+' "$DATE_STR" "$PROJECT_TAG" "$CHAT_NAME" > "$SUMMARY_FILE"
     cat "$RAW_FILE" >> "$SUMMARY_FILE"
   fi
 else
-  SUMMARY_STATUS="LLM_NOT_CONFIGURED"
-  printf '[LLM_FAILED: fallback used] LLM_COMMAND is not configured. Raw messages follow.\n\n' > "$SUMMARY_FILE"
+  SUMMARY_STATUS="LLM_FAILED"
+  printf '# %s 群组日志
+
+## [PROJECT: %s] %s
+[LLM_FAILED: fallback used] LLM command failed. Raw messages follow.
+
+' "$DATE_STR" "$PROJECT_TAG" "$CHAT_NAME" > "$SUMMARY_FILE"
   cat "$RAW_FILE" >> "$SUMMARY_FILE"
 fi
 SUMMARY_LENGTH="$(wc -c < "$SUMMARY_FILE" | tr -d ' ')"
@@ -141,18 +194,12 @@ log "SUMMARY length: $SUMMARY_LENGTH"
 log "SUMMARY SHA256: $(sha256sum "$SUMMARY_FILE" | awk '{print $1}')"
 
 log "Step 5/6: writing daily memory file"
-if [[ ! -f "$MEMORY_FILE" ]]; then
-  printf '# %s daily memory\n\n' "$DATE_STR" > "$MEMORY_FILE"
+cp "$SUMMARY_FILE" "$MEMORY_FILE"
+LINE_COUNT="$(wc -l < "$MEMORY_FILE" | tr -d ' ')"
+log "Memory file written: $MEMORY_FILE ($LINE_COUNT lines)"
+if [[ "$LINE_COUNT" -lt 3 ]]; then
+  log "WARNING: memory file suspiciously short ($LINE_COUNT lines)"
 fi
-{
-  printf '\n## [PROJECT: %s] %s\n\n' "$PROJECT_TAG" "$CHAT_NAME"
-  cat "$SUMMARY_FILE"
-  printf '\n'
-} >> "$MEMORY_FILE"
-MEMORY_LINES="$(wc -l < "$MEMORY_FILE" | tr -d ' ')"
-[[ "$MEMORY_LINES" -gt 0 ]] || fail "Memory file is empty after write: $MEMORY_FILE"
-log "Memory file: $MEMORY_FILE"
-log "Memory lines: $MEMORY_LINES"
 
 send_notification() {
   local text="$1"

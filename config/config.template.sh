@@ -2,14 +2,14 @@
 # Auto Cron Memory Skill configuration template.
 # Copy to config/config.sh and edit, or run scripts/setup.sh.
 
-# Channel type: feishu or discord.
+# Channel type: feishu or discord
 CHANNEL_TYPE="feishu"
 
 # Human-readable title used in memory headings.
-CHAT_NAME="求职准备群"
+CHAT_NAME="My Group Chat"
 
 # Structured memory project tag, for example jobseeker, dev, investor.
-PROJECT_TAG="jobseeker"
+PROJECT_TAG="my-project"
 
 # Daily memory output directory. Relative paths are resolved from the skill repo root.
 MEMORY_DIR="memory"
@@ -30,6 +30,8 @@ WEEKLY_CRON_UTC="58 15 * * 0"
 # Example: LLM_COMMAND='openclaw ask --stdin "Summarize these messages into concise memory bullets"'
 # Leave empty to write raw messages with a fallback marker.
 LLM_COMMAND=""
+# OpenClaw agent id used for openclaw agent --agent. Defaults to PROJECT_TAG if empty.
+AGENT_ID=""
 
 # If true, send a notification back to the chat when memory is written.
 SEND_NOTIFICATION="false"
@@ -42,10 +44,11 @@ FEISHU_APP_SECRET=""
 FEISHU_TENANT_ACCESS_TOKEN=""
 FEISHU_MESSAGE_LIMIT="50"
 
-# Discord settings. Used by scripts/daily_summary_discord.sh.
-DISCORD_CHANNEL_ID=""
+# Discord (required when CHANNEL_TYPE=discord)
+# Prefer exporting DISCORD_BOT_TOKEN in the environment for secrets.
 DISCORD_BOT_TOKEN=""
-DISCORD_MESSAGE_LIMIT="50"
+DISCORD_CHANNEL_ID=""
+DISCORD_MESSAGE_LIMIT="100"
 
 # Advanced: override API roots only for private gateways or tests.
 FEISHU_API_BASE="https://open.feishu.cn/open-apis"

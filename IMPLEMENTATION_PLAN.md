@@ -28,10 +28,10 @@ Build `auto-cron-memory-skill`, an OpenClaw skill that lets any agent schedule a
 
 ## Round 4: Documentation + end-to-end verification
 
-- [ ] Create `README.md`.
-- [ ] Create `scripts/verify.sh`.
-- [ ] Create `references/troubleshooting.md`.
-- [ ] Final review of `SKILL.md` trigger coverage.
+- [x] Create `README.md`.
+- [x] Create `scripts/verify.sh`.
+- [x] Create `references/troubleshooting.md`.
+- [x] Final review of `SKILL.md` trigger coverage.
 
 ## Known implementation constraints
 

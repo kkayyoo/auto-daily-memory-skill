@@ -55,6 +55,7 @@ MEMORY_DIR="$(prompt 'Memory dir' 'memory')"
 LOG_DIR="$(prompt 'Log dir' 'logs')"
 TIMEZONE="$(prompt 'Timezone for memory dates' 'Asia/Shanghai')"
 DAILY_CRON_UTC="$(prompt 'Daily cron in UTC (23:59 BJT = 15:59 UTC)' '59 15 * * *')"
+WEEKLY_CRON_UTC="$(prompt 'Weekly cron in UTC (Sunday 23:58 BJT = 15:58 UTC)' '58 15 * * 0')"
 SEND_NOTIFICATION="$(prompt 'Send chat notification after write? (true/false)' 'false')"
 
 replace_var CHANNEL_TYPE "$CHANNEL_TYPE"
@@ -64,6 +65,7 @@ replace_var MEMORY_DIR "$MEMORY_DIR"
 replace_var LOG_DIR "$LOG_DIR"
 replace_var TIMEZONE "$TIMEZONE"
 replace_var DAILY_CRON_UTC "$DAILY_CRON_UTC"
+replace_var WEEKLY_CRON_UTC "$WEEKLY_CRON_UTC"
 replace_var SEND_NOTIFICATION "$SEND_NOTIFICATION"
 
 case "$CHANNEL_TYPE" in
@@ -102,7 +104,15 @@ CRON_MARKER="auto-cron-memory-skill:daily:$REPO_ROOT"
 CRON_LINE="$DAILY_CRON_UTC export HOME=/home/azureuser; export PATH=/home/azureuser/.local/bin:/home/azureuser/.openclaw/bin:/home/azureuser/.local/share/fnm/node-versions/v24.13.1/installation/bin:/usr/local/bin:/usr/bin:/bin:\$PATH; cd $REPO_ROOT && CONFIG_FILE=$CONFIG_FILE bash $DAILY_SCRIPT >> $CRON_LOG 2>&1 # $CRON_MARKER"
 register_cron_line "$CRON_MARKER" "$CRON_LINE"
 
+WEEKLY_SCRIPT="$REPO_ROOT/scripts/weekly_summary.sh"
+WEEKLY_CRON_LOG="$REPO_ROOT/logs/weekly-summary.log"
+WEEKLY_CRON_MARKER="auto-cron-memory-skill:weekly:$REPO_ROOT"
+WEEKLY_CRON_LINE="$WEEKLY_CRON_UTC export HOME=/home/azureuser; export PATH=/home/azureuser/.local/bin:/home/azureuser/.openclaw/bin:/home/azureuser/.local/share/fnm/node-versions/v24.13.1/installation/bin:/usr/local/bin:/usr/bin:/bin:\$PATH; cd $REPO_ROOT && CONFIG_FILE=$CONFIG_FILE /bin/bash $WEEKLY_SCRIPT >> $WEEKLY_CRON_LOG 2>&1 # $WEEKLY_CRON_MARKER"
+register_cron_line "$WEEKLY_CRON_MARKER" "$WEEKLY_CRON_LINE"
+
 echo "Config written: $CONFIG_FILE"
 echo "Daily cron registered:"
 crontab -l | grep "$CRON_MARKER" || true
+echo "Weekly cron registered:"
+crontab -l | grep "$WEEKLY_CRON_MARKER" || true
 echo "Setup complete"

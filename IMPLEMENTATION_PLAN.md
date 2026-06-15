@@ -22,9 +22,9 @@ Build `auto-cron-memory-skill`, an OpenClaw skill that lets any agent schedule a
 
 ## Round 3: Weekly summary + hallucination hardening
 
-- [ ] Create `scripts/weekly_summary.sh` for `week-{N}-memory.md`.
-- [ ] Register weekly cron in `scripts/setup.sh` at Sunday 23:58 BJT / 15:58 UTC.
-- [ ] Add stronger hash, non-empty, and fallback checks.
+- [x] Create `scripts/weekly_summary.sh` for `week-{N}-memory.md`.
+- [x] Register weekly cron in `scripts/setup.sh` at Sunday 23:58 BJT / 15:58 UTC.
+- [x] Add stronger hash, non-empty, and fallback checks.
 
 ## Round 4: Documentation + end-to-end verification
 

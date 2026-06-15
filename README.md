@@ -1,17 +1,21 @@
+**[English](README.md)** · [中文](README.zh.md)
+
+---
+
 # Auto Cron Memory Skill
 
-自动把飞书或 Discord 群聊历史拉取、总结并写入 OpenClaw agent 的每日和每周 memory 文件。
+Automatically pulls Feishu or Discord group chat history, summarises it with an LLM, and writes daily and weekly memory files for your OpenClaw agent.
 
-## 功能列表
+## Features
 
-- **飞书每日记忆**：通过 `im/v1/messages?container_id_type=chat` 按 `FEISHU_CHAT_ID` 拉取群聊消息。
-- **Discord 每日记忆**：通过 `GET /channels/{channel_id}/messages` 拉取频道消息，过滤 bot 消息并支持 `before` 翻页。
-- **每日/每周输出**：生成 `memory/YYYY-MM-DD.md` 和 `memory/week-N-memory.md`。
-- **多项目标签**：用 `PROJECT_TAG` 在 memory 中写入 `## [PROJECT: ...]`，便于一个 agent 管多个主题。
-- **防幻觉 fallback**：LLM 失败或输出为空时写入 `[LLM_FAILED: fallback used]` 或 `[LLM_FAILED]`，并保留原始消息，不编造总结。
-- **cron 安全环境**：脚本显式 export `HOME` 和完整 `PATH`，stderr 进入日志。
+- **Feishu daily memory** — fetches messages via `im/v1/messages?container_id_type=chat` using `FEISHU_CHAT_ID`, no `messageId` required.
+- **Discord daily memory** — fetches channel messages via `GET /channels/{channel_id}/messages`, filters bot messages, and supports `before`-cursor pagination.
+- **Daily / weekly output** — generates `memory/YYYY-MM-DD.md` and `memory/week-{N}-memory.md` (ISO week number, 01–52).
+- **Multi-project tags** — use `PROJECT_TAG` to write `## [PROJECT: ...]` headings in memory, so one agent can handle multiple topics.
+- **Anti-hallucination fallback** — when the LLM fails or returns empty output, writes `[LLM_FAILED: fallback used]` and preserves the raw messages; never fabricates a summary.
+- **Cron-safe environment** — every script explicitly exports `HOME` and a full `PATH`; stderr is always appended to the log file, never silenced with `2>/dev/null`.
 
-## 安装步骤
+## Quick Start
 
 ### 1. Clone
 
@@ -20,15 +24,15 @@ git clone https://github.com/kkayyoo/auto-daily-memory-skill.git
 cd auto-daily-memory-skill
 ```
 
-### 2. 运行 setup
+### 2. Run setup
 
 ```bash
 bash scripts/setup.sh
 ```
 
-setup 会创建 `config/config.sh`、`memory/`、`logs/`，并注册 daily 与 weekly cron。
+The setup wizard creates `config/config.sh`, `memory/`, and `logs/`, then registers daily and weekly cron jobs.
 
-### 3. 验证
+### 3. Verify
 
 ```bash
 bash scripts/verify.sh
@@ -37,42 +41,42 @@ bash scripts/daily_summary_discord.sh  # CHANNEL_TYPE=discord
 bash scripts/weekly_summary.sh
 ```
 
-## 配置说明
+## Configuration
 
-| 变量 | 必填 | 说明 |
-|---|---:|---|
-| `CHANNEL_TYPE` | 是 | `feishu` 或 `discord`。 |
-| `PROJECT_TAG` | 否 | memory 项目标签，默认 `default`。 |
-| `CHAT_NAME` | 否 | memory 标题中的群聊显示名。 |
-| `MEMORY_DIR` | 否 | memory 输出目录，默认 `memory`。 |
-| `LOG_DIR` | 否 | 日志目录，默认 `logs`。 |
-| `TIMEZONE` | 否 | 日期时区，默认 `Asia/Shanghai`。 |
-| `DAILY_CRON_UTC` | 否 | 每日 cron，默认 `59 15 * * *`，即北京时间 23:59。 |
-| `WEEKLY_CRON_UTC` | 否 | 每周 cron，默认 `58 15 * * 0`，即周日北京时间 23:58。 |
-| `AGENT_ID` | 否 | `openclaw agent --agent` 使用的 agent id；为空时默认使用 `PROJECT_TAG`。 |
-| `FEISHU_CHAT_ID` | 飞书必填 | 飞书群 chat id。 |
-| `FEISHU_APP_ID` | 条件必填 | 无 `FEISHU_TENANT_ACCESS_TOKEN` 时需要。 |
-| `FEISHU_APP_SECRET` | 条件必填 | 无 `FEISHU_TENANT_ACCESS_TOKEN` 时需要。 |
-| `FEISHU_TENANT_ACCESS_TOKEN` | 条件必填 | 可替代 `FEISHU_APP_ID` + `FEISHU_APP_SECRET`。 |
-| `FEISHU_MESSAGE_LIMIT` | 否 | 飞书单次拉取数量。 |
-| `DISCORD_BOT_TOKEN` | Discord 必填 | Discord bot token，推荐通过环境变量提供。 |
-| `DISCORD_CHANNEL_ID` | Discord 必填 | Discord channel id。 |
-| `DISCORD_MESSAGE_LIMIT` | 否 | Discord 每页消息数，默认 `100`。 |
-| `SEND_NOTIFICATION` | 否 | 飞书写入后是否发送通知，默认 `false`。 |
+| Variable | Required | Description |
+|---|:---:|---|
+| `CHANNEL_TYPE` | ✅ | `feishu` or `discord`. |
+| `PROJECT_TAG` | — | Memory project label, defaults to `default`. |
+| `CHAT_NAME` | — | Display name used in memory headings. |
+| `MEMORY_DIR` | — | Output directory for memory files, defaults to `memory`. |
+| `LOG_DIR` | — | Log directory, defaults to `logs`. |
+| `TIMEZONE` | — | Date timezone, defaults to `Asia/Shanghai`. |
+| `DAILY_CRON_UTC` | — | Daily cron schedule (UTC), defaults to `59 15 * * *` (23:59 BJT). |
+| `WEEKLY_CRON_UTC` | — | Weekly cron schedule (UTC), defaults to `58 15 * * 0` (Sunday 23:58 BJT). |
+| `AGENT_ID` | — | Agent id passed to `openclaw agent --agent`; falls back to `PROJECT_TAG`. |
+| `FEISHU_CHAT_ID` | Feishu ✅ | Feishu group chat id. |
+| `FEISHU_APP_ID` | Conditional | Required when `FEISHU_TENANT_ACCESS_TOKEN` is not set. |
+| `FEISHU_APP_SECRET` | Conditional | Required when `FEISHU_TENANT_ACCESS_TOKEN` is not set. |
+| `FEISHU_TENANT_ACCESS_TOKEN` | Conditional | Can replace `FEISHU_APP_ID` + `FEISHU_APP_SECRET`. |
+| `FEISHU_MESSAGE_LIMIT` | — | Feishu page size per request. |
+| `DISCORD_BOT_TOKEN` | Discord ✅ | Discord bot token; recommended via env var. |
+| `DISCORD_CHANNEL_ID` | Discord ✅ | Discord channel id. |
+| `DISCORD_MESSAGE_LIMIT` | — | Discord messages per page, defaults to `100`. |
+| `SEND_NOTIFICATION` | — | Send Feishu notification after writing memory, defaults to `false`. |
 
-## 故障排查快速入口
+## Troubleshooting
 
-详见 [`references/troubleshooting.md`](references/troubleshooting.md)。常见入口：
+Full details in [`references/troubleshooting.md`](references/troubleshooting.md). Common issues:
 
-- cron 中 `openclaw not found`：检查脚本和 crontab 的显式 `PATH`。
-- `SUMMARY length=0`：检查 `openclaw agent --timeout`、agent id 和日志 stderr。
-- 消息数为 0：检查 chat/channel id、token、权限和当天是否确有消息。
-- 飞书 API `code != 0`：检查 `APP_ID`、`APP_SECRET`、tenant token 和权限。
-- 周报为空：检查过去 7 天 `memory/YYYY-MM-DD.md` 是否存在。
+- **`openclaw not found` in cron** — check that the script and crontab entry both set a full explicit `PATH`.
+- **`SUMMARY length=0`** — check `openclaw agent --timeout`, the agent id, and stderr in the log file.
+- **Message count is 0** — verify chat/channel id, token, permissions, and that messages actually exist for that day.
+- **Feishu API `code != 0`** — check `APP_ID`, `APP_SECRET`, the tenant token, and required scopes (`im:message:readonly`, `im:chat:readonly`).
+- **Weekly summary is empty** — check that `memory/YYYY-MM-DD.md` files exist for the past 7 days.
 
-## 已知限制
+## Known Limitations
 
-- 飞书脚本当前按配置的接口响应解析文本消息；复杂卡片、文件、图片只会保留可解析字段。
-- Discord 大流量频道可能遇到 429 rate limit，需要根据日志中的 retry 信息调整运行方式。
-- LLM 调用依赖本机可用的 `openclaw agent`，不直接调用 OpenAI 或 Claude API。
-- setup 会覆盖已有 `config/config.sh`，重新运行前请备份本地密钥。
+- Feishu script parses text messages; complex cards, files, and images retain only extractable text fields.
+- High-volume Discord channels may hit the 429 rate limit; check retry hints in the log.
+- LLM calls require a locally available `openclaw agent`; no direct OpenAI or Claude API key needed.
+- Running `setup.sh` again overwrites `config/config.sh`; back up your credentials first.

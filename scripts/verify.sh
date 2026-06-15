@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 set -u
 
-export HOME="/home/azureuser"
-export PATH="/home/azureuser/.local/bin:/home/azureuser/.openclaw/bin:/home/azureuser/.local/share/fnm/node-versions/v24.13.1/installation/bin:/usr/local/bin:/usr/bin:/bin:$PATH"
+export HOME="${HOME:-$(eval echo ~$(whoami))}"
+export PATH="${HOME}/.local/bin:${HOME}/.openclaw/bin:${HOME}/.local/share/fnm/node-versions/v24.13.1/installation/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:${PATH}"
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"

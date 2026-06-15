@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-export HOME="/home/azureuser"
-export PATH="/home/azureuser/.local/bin:/home/azureuser/.openclaw/bin:/home/azureuser/.local/share/fnm/node-versions/v24.13.1/installation/bin:/usr/local/bin:/usr/bin:/bin:$PATH"
+export HOME="${HOME:-$(eval echo ~$(whoami))}"
+export PATH="${HOME}/.local/bin:${HOME}/.openclaw/bin:${HOME}/.local/share/fnm/node-versions/v24.13.1/installation/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:${PATH}"
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
@@ -101,13 +101,13 @@ chmod +x "$REPO_ROOT/scripts"/*.sh
 
 CRON_LOG="$REPO_ROOT/logs/daily_summary.log"
 CRON_MARKER="auto-cron-memory-skill:daily:$REPO_ROOT"
-CRON_LINE="$DAILY_CRON_UTC export HOME=/home/azureuser; export PATH=/home/azureuser/.local/bin:/home/azureuser/.openclaw/bin:/home/azureuser/.local/share/fnm/node-versions/v24.13.1/installation/bin:/usr/local/bin:/usr/bin:/bin:\$PATH; cd $REPO_ROOT && CONFIG_FILE=$CONFIG_FILE bash $DAILY_SCRIPT >> $CRON_LOG 2>&1 # $CRON_MARKER"
+CRON_LINE="$DAILY_CRON_UTC export HOME='$(eval echo ~$(whoami))'; export PATH=$HOME/.local/bin:$HOME/.openclaw/bin:$HOME/.local/share/fnm/node-versions/v24.13.1/installation/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:$PATH; cd $REPO_ROOT && CONFIG_FILE=$CONFIG_FILE bash $DAILY_SCRIPT >> $CRON_LOG 2>&1 # $CRON_MARKER"
 register_cron_line "$CRON_MARKER" "$CRON_LINE"
 
 WEEKLY_SCRIPT="$REPO_ROOT/scripts/weekly_summary.sh"
 WEEKLY_CRON_LOG="$REPO_ROOT/logs/weekly-summary.log"
 WEEKLY_CRON_MARKER="auto-cron-memory-skill:weekly:$REPO_ROOT"
-WEEKLY_CRON_LINE="$WEEKLY_CRON_UTC export HOME=/home/azureuser; export PATH=/home/azureuser/.local/bin:/home/azureuser/.openclaw/bin:/home/azureuser/.local/share/fnm/node-versions/v24.13.1/installation/bin:/usr/local/bin:/usr/bin:/bin:\$PATH; cd $REPO_ROOT && CONFIG_FILE=$CONFIG_FILE /bin/bash $WEEKLY_SCRIPT >> $WEEKLY_CRON_LOG 2>&1 # $WEEKLY_CRON_MARKER"
+WEEKLY_CRON_LINE="$WEEKLY_CRON_UTC export HOME='$(eval echo ~$(whoami))'; export PATH=$HOME/.local/bin:$HOME/.openclaw/bin:$HOME/.local/share/fnm/node-versions/v24.13.1/installation/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:$PATH; cd $REPO_ROOT && CONFIG_FILE=$CONFIG_FILE /bin/bash $WEEKLY_SCRIPT >> $WEEKLY_CRON_LOG 2>&1 # $WEEKLY_CRON_MARKER"
 register_cron_line "$WEEKLY_CRON_MARKER" "$WEEKLY_CRON_LINE"
 
 echo "Config written: $CONFIG_FILE"
